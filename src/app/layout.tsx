@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "ISP Billing App",
-  description: "Managed by HS Networking",
+  description: "Managed by HS Network",
 };
 
 export default function RootLayout({

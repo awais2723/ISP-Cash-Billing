@@ -37,7 +37,8 @@ export function CustomerForm({ customer, plans, regions }: CustomerFormProps) {
       <DialogTrigger asChild>
         <Button variant={customer ? 'ghost' : 'default'}>{customer ? 'Edit' : 'Add Customer'}</Button>
       </DialogTrigger>
-      <DialogContent>
+      {/* ✅ FIX APPLIED HERE */}
+      <DialogContent className="opacity-100 bg-white">
         <DialogHeader>
           <DialogTitle>{customer ? 'Edit Customer' : 'Create New Customer'}</DialogTitle>
         </DialogHeader>

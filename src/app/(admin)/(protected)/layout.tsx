@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';
-import { Home, Users, Map, FileText, CheckSquare } from 'lucide-react';
+import { Toaster } from "@/components/ui/sonner";
+import { Home, Users, Map, FileText, CheckSquare, UserCog } from 'lucide-react'; // Import UserCog
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  // ✅ FIX: Await the async function call
+  // ... session check logic
   const session = await getSession();
-
   if (!session || (session.role !== 'ADMIN' && session.role !== 'MANAGER')) {
     redirect('/login');
   }
@@ -18,6 +18,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         <nav className="flex flex-col space-y-2">
           <Link href="/dashboard" className="flex items-center p-2 rounded hover:bg-gray-700"><Home className="mr-2 h-4 w-4" />Dashboard</Link>
           <Link href="/customers" className="flex items-center p-2 rounded hover:bg-gray-700"><Users className="mr-2 h-4 w-4" />Customers</Link>
+          <Link href="/users" className="flex items-center p-2 rounded hover:bg-gray-700"><UserCog className="mr-2 h-4 w-4" />Users</Link> {/* ✅ ADD THIS LINE */}
           <Link href="/regions" className="flex items-center p-2 rounded hover:bg-gray-700"><Map className="mr-2 h-4 w-4" />Regions</Link>
           <Link href="/plans" className="flex items-center p-2 rounded hover:bg-gray-700"><FileText className="mr-2 h-4 w-4" />Plans</Link>
           <Link href="/reconciliation" className="flex items-center p-2 rounded hover:bg-gray-700"><CheckSquare className="mr-2 h-4 w-4" />Reconciliation</Link>
@@ -28,6 +29,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
             <h1 className="text-xl font-semibold">Welcome, {session.role}</h1>
         </header>
         {children}
+        <Toaster richColors />
       </main>
     </div>
   );

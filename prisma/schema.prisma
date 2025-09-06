@@ -72,7 +72,7 @@ model Customer {
   phone   String
   address String
   status  Status  @default(ACTIVE)
-
+createdAt DateTime @default(now())
   region_id String @db.ObjectId
   region    Region @relation(fields: [region_id], references: [id])
 
