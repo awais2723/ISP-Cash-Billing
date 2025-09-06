@@ -1,0 +1,187 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  username    String   @unique
+  password    String
+  Fname       String
+  phone       String   @unique
+  role        Role     @default(COLLECTOR)
+  status      Status   @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignments  Assignment[]
+  payments     Payment[]
+  cashSessions CashSession[]
+  cashDrops    CashDrop[] // Approved by Admin/Manager
+  auditLogs    AuditLog[]
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  COLLECTOR
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model Region {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  parent_id String?  @db.ObjectId
+  parent    Region?  @relation("SubRegions", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children  Region[] @relation("SubRegions")
+
+  assignments Assignment[]
+  customers   Customer[]
+}
+
+model Assignment {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  region_id    String   @db.ObjectId
+  user_id      String   @db.ObjectId // Collector's ID
+  active_from  DateTime
+  active_to    DateTime?
+
+  region    Region @relation(fields: [region_id], references: [id])
+  collector User   @relation(fields: [user_id], references: [id])
+
+  @@index([region_id, user_id])
+}
+
+model Customer {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  code    String? @unique
+  username String @unique
+  Fname   String
+  phone   String
+  address String
+  status  Status  @default(ACTIVE)
+
+  region_id String @db.ObjectId
+  region    Region @relation(fields: [region_id], references: [id])
+
+  plan_id String @db.ObjectId
+  plan    Plan   @relation(fields: [plan_id], references: [id])
+  
+  invoices Invoice[]
+  payments Payment[]
+}
+
+model Plan {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  company        String?
+  purch_price    Float   @default(0)
+  monthly_charge Float
+  tax_rate       Float   @default(0) // e.g., 0.16 for 16%
+  is_active      Boolean @default(true)
+
+  customers Customer[]
+}
+
+model Invoice {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  customer_id String        @db.ObjectId
+  period      String // Format: "YYYY-MM"
+  due_date    DateTime
+  amount      Float // Base amount from plan
+  extra_amount Float  @default(0) // late fees, etc.
+  paid_amount Float  @default(0)
+  status      InvoiceStatus @default(DUE)
+
+  customer Customer  @relation(fields: [customer_id], references: [id])
+  payments Payment[]
+
+  @@index([customer_id, status])
+}
+
+enum InvoiceStatus {
+  DUE
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+model Payment {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  invoice_id      String   @db.ObjectId
+  customer_id     String   @db.ObjectId
+  collector_id    String   @db.ObjectId
+  cash_session_id String   @db.ObjectId
+  amount          Float
+  method          String   @default("CASH")
+  received_at     DateTime @default(now())
+  receipt_no      String   @unique
+  note            String?
+
+  invoice      Invoice     @relation(fields: [invoice_id], references: [id])
+  customer     Customer    @relation(fields: [customer_id], references: [id])
+  collector    User        @relation(fields: [collector_id], references: [id])
+  cash_session CashSession @relation(fields: [cash_session_id], references: [id])
+}
+
+model CashSession {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  collector_id    String   @db.ObjectId
+  opened_at       DateTime @default(now())
+  closed_at       DateTime?
+  expected_total  Float    @default(0)
+  counted_total   Float?
+  variance        Float?
+  status          SessionStatus @default(OPEN)
+
+  collector User       @relation(fields: [collector_id], references: [id])
+  payments  Payment[]
+  cashDrops CashDrop[]
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED // Awaiting admin approval
+  APPROVED
+  RECONCILED // Variance resolved
+}
+
+model CashDrop {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  cash_session_id String   @db.ObjectId
+  bank_name    String?
+  deposit_date DateTime
+  slip_no      String?
+  amount       Float
+  photo_url    String? // URL to slip image
+  approved_by  String?  @db.ObjectId // Admin/Manager ID
+  
+  cash_session CashSession @relation(fields: [cash_session_id], references: [id])
+  approver     User?       @relation(fields: [approved_by], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  actor_id    String   @db.ObjectId
+  action      String // e.g., "CUSTOMER_CREATE", "PAYMENT_APPROVE"
+  entity      String // e.g., "Customer"
+  entity_id   String
+  before_json String? // JSON string of object before change
+  after_json  String  // JSON string of object after change
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  actor User @relation(fields: [actor_id], references: [id])
+}
