@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth.server';
 
 export async function POST() {
-  const session = getSession();
+  const session = await getSession();
   if (session?.role !== 'COLLECTOR') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }

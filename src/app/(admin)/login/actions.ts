@@ -5,11 +5,11 @@ import prisma from '@/lib/prisma';
 import { comparePasswords, createJwtToken } from '@/lib/auth';
 
 export async function loginUser(formData: FormData) {
+  // ... username/password retrieval
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
 
   if (!username || !password) {
-    // In a real app, you'd return an error state
     redirect('/login?error=Missing credentials');
   }
 
@@ -19,19 +19,30 @@ export async function loginUser(formData: FormData) {
     redirect('/login?error=Invalid credentials');
   }
 
-  // Allow only Admin and Manager roles to access the panel
-  if (user.role !== 'ADMIN' && user.role !== 'MANAGER') {
-    redirect('/login?error=Access denied');
-  }
+  // ... status checks ...
+  if (user.status === 'SUSPENDED') { /* ... */ }
+  if (user.status === 'INACTIVE') { /* ... */ }
 
-  const token = createJwtToken({ userId: user.id, role: user.role });
-
+  // ✅ Pass the user's Fname when creating the token
+  const token = createJwtToken({ 
+    userId: user.id, 
+    role: user.role, 
+    Fname: user.Fname 
+  });
+  
   (await cookies()).set('session_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24, // 1 day
+    maxAge: 60 * 60 * 4,
     path: '/',
   });
 
-  redirect('/dashboard'); // Redirect to the main dashboard after login
+  // ... role-based redirection logic ...
+  if (user.role === 'ADMIN' || user.role === 'MANAGER') {
+    redirect('/dashboard');
+  } else if (user.role === 'COLLECTOR') {
+    redirect('/collector/dashboard');
+  } else {
+    redirect('/login?error=Access denied');
+  }
 }

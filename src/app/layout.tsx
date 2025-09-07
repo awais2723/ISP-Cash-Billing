@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ISP Billing App",
+  title: "HS-Network Portal",
   description: "Managed by HS Network",
 };
 
@@ -16,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-red-500`}>{children}</body>
+      <body className={`${inter.className} bg-white`}>{children}</body>
     </html>
   );
 }

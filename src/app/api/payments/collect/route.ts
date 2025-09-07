@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth.server';
 import { randomBytes } from 'crypto';
 
 export async function POST(req: NextRequest) {
-  const session = getSession();
+  const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(paymentResult, { status: 201 });
   } catch (error) {
     console.error('Payment transaction failed:', error);
-    return NextResponse.json({ error: 'Transaction failed', details: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Transaction failed', details: errorMessage }, { status: 500 });
   }
 }

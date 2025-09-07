@@ -1,7 +1,7 @@
 'use server';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth.server';
 
 export async function approveSession(formData: FormData) {
   const session = getSession();
