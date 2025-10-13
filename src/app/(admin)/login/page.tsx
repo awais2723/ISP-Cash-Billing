@@ -9,6 +9,8 @@ import hsLogo from '@/images/hs.png'; // Make sure the path to your new logo is 
 
 // The page now accepts searchParams to display error messages
 export default function LoginPage({ searchParams }: { searchParams: { error: string } }) {
+  const error = searchParams?.error;
+
   return (
     // The new gradient background
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 p-4">
@@ -29,10 +31,10 @@ export default function LoginPage({ searchParams }: { searchParams: { error: str
           </CardHeader>
           <CardContent>
             {/* Error Message Display */}
-            {searchParams.error && (
+            {error && (
               <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
                 <p className="font-bold">Login Failed</p>
-                <p>{searchParams.error}</p>
+                <p>{error}</p>
               </div>
             )}
 

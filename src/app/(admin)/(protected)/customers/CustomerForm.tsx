@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,6 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { Status } from "@prisma/client";
 
-// ✅ Updated type to include status
 type Plan = { id: string; name: string };
 type Region = { id: string; name: string };
 type Customer = {
@@ -72,7 +71,7 @@ export function CustomerForm({
   });
 
   useEffect(() => {
-    if (state?.message) {
+    if (state.message) {
       if (state.success) {
         toast.success(state.message);
         setOpen(false);
@@ -104,7 +103,8 @@ export function CustomerForm({
               {customer ? "Edit Customer" : "Create New Customer"}
             </DialogTitle>
           </DialogHeader>
-          <form action={formAction}>
+          {/* ✅ FIX: The key prop forces the form to reset its state when re-opened */}
+          <form key={customer?.id || "new-customer"} action={formAction}>
             <div className="grid gap-4 py-4">
               <Input
                 name="Fname"
@@ -145,8 +145,7 @@ export function CustomerForm({
               <Select
                 name="region_id"
                 defaultValue={customer?.region_id}
-                required
-              >
+                required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a region" />
                 </SelectTrigger>
@@ -158,8 +157,6 @@ export function CustomerForm({
                   ))}
                 </SelectContent>
               </Select>
-
-              {/* ✅ ADDED: Status dropdown for edit mode */}
               {customer && (
                 <Select name="status" defaultValue={customer.status}>
                   <SelectTrigger>
@@ -171,36 +168,33 @@ export function CustomerForm({
                   </SelectContent>
                 </Select>
               )}
+              {state?.message && !state.success && (
+                <p className="text-red-500 text-sm pt-2">{state.message}</p>
+              )}
             </div>
-
             <DialogFooter className="flex flex-row justify-between w-full pt-4">
               <div>
-                {/* ✅ ADDED: Delete button for edit mode */}
                 {customer && (
                   <Button
-                    className='bg-red-600 hover:bg-red-700 text-white mr-6'
                     type="button"
                     variant="destructive"
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                  >
+                    onClick={() => setIsDeleteDialogOpen(true)}>
                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                   </Button>
                 )}
               </div>
-              <Button type="submit" className='bg-blue-500 hover:bg-blue-600 text-white'>
-                {" "}
-                {customer ? "Update Customer" : "Create Customer"}{" "}
+              <Button type="submit">
+                {customer ? "Update Customer" : "Create Customer"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* ✅ ADDED: Confirmation Dialog for Delete */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
+        onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent className="opacity-100 bg-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -213,8 +207,7 @@ export function CustomerForm({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
+              className="bg-red-600 hover:bg-red-700">
               Confirm Delete
             </AlertDialogAction>
           </AlertDialogFooter>

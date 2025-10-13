@@ -6,6 +6,9 @@ import { AgingPieChart } from './AgingPieChart';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
+import { RunBillingButton } from './RunBillingButton';
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   // --- Data Fetching (No changes needed here) ---
@@ -78,62 +81,110 @@ export default async function DashboardPage() {
   ].filter(d => d.value > 0);
 
   return (
-    <div className="flex flex-col gap-4 md:gap-6"> {/* ✅ Adjusted gap for mobile */}
+    <div className="flex flex-col gap-4 md:gap-6">
+      {" "}
+      {/* ✅ Adjusted gap for mobile */}
       <header>
         {/* ✅ Responsive font size */}
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">An overview of your collection performance.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Dashboard
+        </h1>
+        <p className="text-muted-foreground">
+          An overview of your collection performance.
+        </p>
+        <RunBillingButton />
       </header>
-      
       {/* KPI Cards Grid - This is already responsive by default */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Collections (This Month)" value={formatCurrency(totalCollectedMonth)} icon={TrendingUp} change={`+${percentageChange}% from last month`} />
-        <StatCard title="Dues Billed (This Month)" value={formatCurrency(totalBilledMonth)} icon={FileText} description="Invoices generated" />
-        <StatCard title="Total Outstanding Dues" value={formatCurrency(totalDuesData._sum.amount)} icon={AlertTriangle} description="Across all invoices" />
-        <StatCard title="Collection Rate" value={`${collectionRate}%`} icon={CheckCircle} description="Of amount billed this month" />
-        <StatCard title="Total Active Customers" value={activeCustomersData} icon={Users} description="Currently subscribed" />
-        <StatCard title="New Customers" value={`+${newCustomersData}`} icon={UserPlus} description="Joined this month" />
-        <StatCard title="Active Collector Sessions" value={activeSessionsCount} icon={Activity} description="Currently on the field" />
-        <StatCard title="Pending Reconciliations" value={pendingSessionsCount} icon={Clock} description="Sessions to be approved" />
+        <StatCard
+          title="Collections (This Month)"
+          value={formatCurrency(totalCollectedMonth)}
+          icon={TrendingUp}
+          change={`+${percentageChange}% from last month`}
+        />
+        <StatCard
+          title="Dues Billed (This Month)"
+          value={formatCurrency(totalBilledMonth)}
+          icon={FileText}
+          description="Invoices generated"
+        />
+        <StatCard
+          title="Total Outstanding Dues"
+          value={formatCurrency(totalDuesData._sum.amount)}
+          icon={AlertTriangle}
+          description="Across all invoices"
+        />
+        <StatCard
+          title="Collection Rate"
+          value={`${collectionRate}%`}
+          icon={CheckCircle}
+          description="Of amount billed this month"
+        />
+        <StatCard
+          title="Total Active Customers"
+          value={activeCustomersData}
+          icon={Users}
+          description="Currently subscribed"
+        />
+        <StatCard
+          title="New Customers"
+          value={`+${newCustomersData}`}
+          icon={UserPlus}
+          description="Joined this month"
+        />
+        <StatCard
+          title="Active Collector Sessions"
+          value={activeSessionsCount}
+          icon={Activity}
+          description="Currently on the field"
+        />
+        <StatCard
+          title="Pending Reconciliations"
+          value={pendingSessionsCount}
+          icon={Clock}
+          description="Sessions to be approved"
+        />
       </div>
-
       {/* ✅ Main Grid for Charts and Tables - Now stacks on mobile and tablet */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-            <RecentCollectionsChart data={collectionsByDay} />
+          <RecentCollectionsChart data={collectionsByDay} />
         </div>
         <div className="lg:col-span-1">
-            <AgingPieChart data={agingPieChartData} />
+          <AgingPieChart data={agingPieChartData} />
         </div>
       </div>
-      
-       <Card>
+      <Card>
         <CardHeader>
           <CardTitle>Top Collectors</CardTitle>
           <CardDescription>Top performers this month.</CardDescription>
         </CardHeader>
         <CardContent>
-            {/* ✅ Responsive wrapper for the table */}
-            <div className="overflow-x-auto">
-              <Table>
-                  <TableHeader>
-                      <TableRow>
-                          <TableHead>Collector</TableHead>
-                          <TableHead className="text-right">Amount Collected</TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {topCollectorsData.map(collectorData => (
-                          <TableRow key={collectorData.collector_id}>
-                              <TableCell>{collectorMap[collectorData.collector_id] || 'Unknown'}</TableCell>
-                              <TableCell className="text-right font-medium">{formatCurrency(collectorData._sum.amount)}</TableCell>
-                          </TableRow>
-                      ))}
-                  </TableBody>
-              </Table>
-            </div>
+          {/* ✅ Responsive wrapper for the table */}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Collector</TableHead>
+                  <TableHead className="text-right">Amount Collected</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {topCollectorsData.map((collectorData) => (
+                  <TableRow key={collectorData.collector_id}>
+                    <TableCell>
+                      {collectorMap[collectorData.collector_id] || "Unknown"}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(collectorData._sum.amount)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
-       </Card>
+      </Card>
     </div>
   );
 }

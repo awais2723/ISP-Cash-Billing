@@ -1,138 +1,180 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { Circle } from 'lucide-react';
-// You'll need these shadcn/ui components for the new layout
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-
-// Define the new Customer type that includes due status
-interface Customer {
-  id: string;
-  Fname: string;
-  address: string;
-  hasDueInvoice: boolean;
-}
-
-const CACHE_KEY = 'collector_customers_cache';
-const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import Link from "next/link";
+import {
+  Wallet,
+  Power,
+  PowerOff,
+  DollarSign,
+  MapPin,
+  AlertTriangle,
+} from "lucide-react";
+import { useSession } from "../SessionContext";
 
 export default function CollectorDashboard() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [session, setSession] = useState<any>(null); // Use 'any' for simplicity or define a session type
-  const [error, setError] = useState('');
+  const {
+    activeSession,
+    totalCollectedToday,
+    assignedRegions,
+    isLoading,
+    openSession,
+    closeSession,
+  } = useSession();
 
-  useEffect(() => {
-    // Load active session from localStorage
-    const activeSession = localStorage.getItem('active_session');
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
+
+  const handleConfirmClose = () => {
     if (activeSession) {
-      setSession(JSON.parse(activeSession));
+      closeSession(activeSession.id);
     }
-
-    const fetchAndCacheCustomers = async () => {
-      setError('');
-      try {
-        const response = await fetch('/api/collector/data');
-        if (!response.ok) throw new Error('Failed to sync with server.');
-        
-        const freshData: Customer[] = await response.json();
-        
-        // Sort data with dues on top
-        freshData.sort((a, b) => Number(b.hasDueInvoice) - Number(a.hasDueInvoice));
-        
-        setCustomers(freshData);
-        
-        // Update cache with fresh data and a timestamp
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-          timestamp: Date.now(),
-          data: freshData,
-        }));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Initial load from cache
-    const cachedItem = localStorage.getItem(CACHE_KEY);
-    if (cachedItem) {
-      const { timestamp, data } = JSON.parse(cachedItem);
-      // Check if cache is still valid
-      if (Date.now() - timestamp < CACHE_DURATION) {
-        setCustomers(data);
-        setIsLoading(false); // We have data, so stop initial loading indicator
-        fetchAndCacheCustomers(); // Fetch fresh data in the background
-        return;
-      }
-    }
-    
-    // If no valid cache, fetch from server
-    fetchAndCacheCustomers();
-  }, []);
-
-  const handleOpenSession = async () => {
-      const res = await fetch('/api/sessions/open', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-          localStorage.setItem('active_session', JSON.stringify(data));
-          setSession(data);
-      } else {
-          alert('Failed to open session. Please try again.');
-      }
+    setIsCloseConfirmOpen(false);
   };
-  
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center p-8 text-muted-foreground">
+          Loading Dashboard...
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      {/* Session Management Card */}
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Collected Today
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              PKR {totalCollectedToday.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              From all sessions today
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Assigned Regions
+            </CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{assignedRegions.length}</div>
+            <p className="text-xs text-muted-foreground">Total service areas</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
-        <CardContent className="p-4 text-center">
-          {session ? (
-            <div>
-              <p className="font-semibold text-green-600">Session Active</p>
-              <p className="text-xs text-muted-foreground">
-                Opened at: {new Date(session.opened_at).toLocaleTimeString()}
-              </p>
-            </div>
+        <CardHeader>
+          <CardTitle>
+            {activeSession ? "Session In Progress" : "Start Your Day"}
+          </CardTitle>
+          <CardDescription>
+            {activeSession
+              ? `Opened at: ${new Date(
+                  activeSession.opened_at
+                ).toLocaleTimeString()}`
+              : "Activate a new session to begin collecting."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {activeSession ? (
+            <Button
+              onClick={() => setIsCloseConfirmOpen(true)}
+              variant="outline"
+              className="w-full">
+              <PowerOff className="mr-2 h-4 w-4" /> Close Session
+            </Button>
           ) : (
-            <div>
-              <h2 className="text-lg font-semibold mb-2">Ready to Collect?</h2>
-              <Button onClick={handleOpenSession} className="bg-green-600 hover:bg-green-700">
-                Open New Cash Session
-              </Button>
-            </div>
+            <Button
+              onClick={openSession}
+              className="w-full bg-green-600 hover:bg-green-700 text-white">
+              <Power className="mr-2 h-4 w-4" /> Activate Session
+            </Button>
           )}
         </CardContent>
       </Card>
-      
-      {/* Customer List Section */}
-      <div>
-        <h2 className="text-xl font-bold mb-2">Assigned Customers ({customers.length})</h2>
-        {isLoading && <p>Loading customers...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-        
-        {!isLoading && !error && (
-          <div className="space-y-2">
-            {customers.map(customer => (
-              <Link key={customer.id} href={`/collector/customers/${customer.id}`}>
-                <div className="bg-white p-3 rounded-lg shadow cursor-pointer hover:bg-gray-50 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">{customer.Fname}</p>
-                    <p className="text-sm text-gray-600">{customer.address}</p>
-                  </div>
-                  {/* Red dot indicator for dues */}
-                  {customer.hasDueInvoice && (
-                    <Circle className="h-3 w-3 text-red-500 fill-current" />
-                  )}
+
+      {activeSession ? (
+        <Link href="/collector/collect" className="block">
+          <Button
+            size="lg"
+            className="w-full h-16 text-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg">
+            <Wallet className="mr-3 h-8 w-8" />
+            Go to Collection List
+          </Button>
+        </Link>
+      ) : (
+        <div className="text-center p-4 bg-gray-100 rounded-lg">
+          <p className="text-sm text-muted-foreground">
+            Activate a session to begin collecting payments.
+          </p>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        open={isCloseConfirmOpen}
+        onOpenChange={setIsCloseConfirmOpen}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100">
+              <AlertTriangle
+                className="h-6 w-6 text-yellow-600"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="mt-3 text-center sm:mt-5">
+              <AlertDialogTitle>Confirm Close Session</AlertDialogTitle>
+              <AlertDialogDescription className="mt-2">
+                You have collected a total of:
+                {/* ✅ FIX: Display the amount collected IN THIS SESSION */}
+                <div className="text-2xl font-bold my-4 text-slate-800">
+                  PKR{" "}
+                  {activeSession?.collected_in_session?.toLocaleString() || 0}
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+                Confirm to close and submit this amount for reconciliation.
+              </AlertDialogDescription>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="grid grid-cols-2 gap-2 pt-2">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmClose}
+              className="bg-blue-600 hover:bg-blue-700 text-white">
+              Confirm & Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-

@@ -1,63 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import { createBillingCycles, processBillingCycles } from "@/lib/billing";
 
-// This is a simplified version. A production version would handle timezones better.
-function getBillingPeriod() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0'); // getMonth() is 0-indexed
-    return `${year}-${month}`;
-}
-
+/**
+ * The main billing engine API endpoint, triggered by a secure Cron Job.
+ * It orchestrates the two-phase billing process.
+ */
 export async function POST(req: NextRequest) {
-  // In production, you'd secure this with a secret key, not a user session
-  // const session = getSession(); 
-  // if(session?.role !== 'ADMIN') {
-  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  // }
-  const authHeader = req.headers.get('authorization');
+  // 1. Security Check
+  const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const period = getBillingPeriod();
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + 10); // Due 10 days from now
-
   try {
-    const activeCustomers = await prisma.customer.findMany({
-      where: { status: 'ACTIVE' },
-      include: { plan: true },
+    const now = new Date();
+    const period = `${now.getFullYear()}-${(now.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}`;
+
+    // 2. Run Phase 1: Create the "to-do list" of pending billing cycles.
+    const { created } = await createBillingCycles(period);
+
+    // 3. Run Phase 2: Process the "to-do list" and generate the invoices.
+    const { invoicesCreated } = await processBillingCycles(period);
+
+    // 4. Formulate the final summary
+    const summary = `Billing run for ${period} complete. New cycles prepared: ${created}. Invoices generated from queue: ${invoicesCreated}.`;
+    console.log(summary);
+
+    return NextResponse.json({
+      message: "Billing run completed successfully.",
+      summary: summary,
     });
-
-    let invoicesCreated = 0;
-    
-    // Use a transaction to create all invoices at once
-    await prisma.$transaction(async (tx) => {
-        for (const customer of activeCustomers) {
-            const existingInvoice = await tx.invoice.findFirst({
-                where: { customer_id: customer.id, period: period }
-            });
-
-            if (!existingInvoice) {
-                await tx.invoice.create({
-                    data: {
-                        customer_id: customer.id,
-                        period: period,
-                        due_date: dueDate,
-                        amount: customer.plan.monthly_charge,
-                        status: 'DUE',
-                    }
-                });
-                invoicesCreated++;
-            }
-        }
-    });
-
-    return NextResponse.json({ message: 'Billing run completed.', invoicesCreated });
   } catch (error) {
-    console.error("Billing run failed:", error);
-    return NextResponse.json({ error: 'Billing run failed' }, { status: 500 });
+    console.error("CRITICAL: Automated billing run failed!", error);
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json(
+      { error: "An unknown error occurred during the billing run." },
+      { status: 500 }
+    );
   }
 }

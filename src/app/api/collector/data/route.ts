@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth.server'; // Use the server-only auth file
+import { getSession } from '@/lib/auth.server';
 
 export async function GET() {
   const session = await getSession();
@@ -9,41 +9,47 @@ export async function GET() {
   }
 
   try {
-    // Find all regions assigned to this collector
     const assignments = await prisma.assignment.findMany({
-      where: { user_id: session.userId, active_to: null },
+      where: { user_id: session.userId },
       select: { region_id: true }
     });
     const regionIds = assignments.map(a => a.region_id);
-
-    // Fetch all customers in those regions
+    
     const customers = await prisma.customer.findMany({
       where: { region_id: { in: regionIds }, status: 'ACTIVE' },
-      select: { id: true, Fname: true, address: true }
+      // ✅ Added 'address' to the selected fields
+      select: { 
+        id: true, 
+        Fname: true, 
+        username: true, 
+        phone: true, 
+        address: true, // <-- ADDED
+        region: { select: { name: true } } 
+      }
     });
+
     const customerIds = customers.map(c => c.id);
-
-    // Find all invoices with dues for these customers
-    const dueInvoices = await prisma.invoice.findMany({
-        where: {
-            customer_id: { in: customerIds },
-            status: { in: ['DUE', 'PARTIAL']}
-        },
-        select: { customer_id: true }
+    const invoices = await prisma.invoice.findMany({
+      where: { customer_id: { in: customerIds }, status: { in: ['DUE', 'PARTIAL'] } },
+      select: { customer_id: true, amount: true, extra_amount: true, paid_amount: true }
     });
 
-    // Create a Set for quick lookups of which customers have dues
-    const customersWithDues = new Set(dueInvoices.map(inv => inv.customer_id));
+    const dueMap = new Map<string, number>();
+    invoices.forEach(inv => {
+      const due = (inv.amount + inv.extra_amount) - inv.paid_amount;
+      dueMap.set(inv.customer_id, (dueMap.get(inv.customer_id) || 0) + due);
+    });
 
-    // Combine the data, adding a `hasDueInvoice` flag
-    const customersWithDueStatus = customers.map(customer => ({
+    const customersWithDues = customers.map(customer => ({
       ...customer,
-      hasDueInvoice: customersWithDues.has(customer.id)
+      dues: dueMap.get(customer.id) || 0
     }));
+    
+    customersWithDues.sort((a, b) => b.dues - a.dues);
 
-    return NextResponse.json(customersWithDueStatus);
+    return NextResponse.json(customersWithDues);
   } catch (error) {
-    console.error("Failed to fetch collector data:", error);
-    return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: 'Failed to fetch customer data' }, { status: 500 });
   }
 }

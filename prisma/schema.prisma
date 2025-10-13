@@ -26,6 +26,7 @@ model User {
   cashSessions CashSession[]
   cashDrops    CashDrop[] // Approved by Admin/Manager
   auditLogs    AuditLog[]
+   createdInvoices Invoice[] @relation("CreatedInvoices")
 }
 
 enum Role {
@@ -81,6 +82,7 @@ createdAt DateTime @default(now())
   
   invoices Invoice[]
   payments Payment[]
+  billingCycles BillingCycle[]
 }
 
 model Plan {
@@ -98,17 +100,47 @@ model Plan {
 model Invoice {
   id          String        @id @default(auto()) @map("_id") @db.ObjectId
   customer_id String        @db.ObjectId
-  period      String // Format: "YYYY-MM"
+  period      String? // Format: "YYYY-MM"
   due_date    DateTime
   amount      Float // Base amount from plan
   extra_amount Float  @default(0) // late fees, etc.
   paid_amount Float  @default(0)
   status      InvoiceStatus @default(DUE)
+  
+    category     String?       // For "New Connection", "Repairing", etc.
+  notes        String?       // For the custom description
+  creator_id   String?       @db.ObjectId
+  creator      User?         @relation("CreatedInvoices", fields: [creator_id], references: [id])
 
   customer Customer  @relation(fields: [customer_id], references: [id])
   payments Payment[]
 
+ billingCycle_id String?       @db.ObjectId
+  billingCycle    BillingCycle? @relation(fields: [billingCycle_id], references: [id])
+
   @@index([customer_id, status])
+  @@unique([customer_id, period, category])
+ 
+
+
+}
+
+model BillingCycle {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  customer_id String   @db.ObjectId
+  period      String   // e.g., "2025-10"
+  status      String   // PENDING, BILLED, SKIPPED
+ 
+  createdAt   DateTime @default(now())
+  
+  customer Customer @relation(fields: [customer_id], references: [id])
+  
+
+  
+  invoices  Invoice[]
+
+  // This is the database-level guarantee against duplicates
+  @@unique([customer_id, period])
 }
 
 enum InvoiceStatus {
