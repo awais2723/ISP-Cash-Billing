@@ -64,7 +64,8 @@ export async function processBillingCycles(period: string) {
     if (!customer || !customer.plan) continue;
 
     await prisma.$transaction(async (tx) => {
-      const newInvoice = await tx.invoice.create({
+      // Create the invoice and connect it back to the billing cycle
+      await tx.invoice.create({
         data: {
           customer_id: customer.id,
           period: period,
@@ -75,24 +76,25 @@ export async function processBillingCycles(period: string) {
           ),
           amount: customer.plan.monthly_charge,
           status: InvoiceStatus.DUE,
+          billingCycle_id: cycle.id, // ✅ This correctly links the invoice to the cycle
         },
       });
 
+      // ✅ FIX: Update the cycle's status ONLY. Do not set invoice_id here.
       await tx.billingCycle.update({
         where: { id: cycle.id },
         data: {
           status: "BILLED",
-          invoice_id: newInvoice.id,
         },
       });
     });
+
     invoicesCreated++;
   }
 
   console.log(`[Phase 2] Successfully created ${invoicesCreated} invoices.`);
   return { invoicesCreated };
 }
-
 /**
  * Handles immediate billing for a brand new customer using the full plan amount.
  */
@@ -107,30 +109,33 @@ export async function billNewCustomer(customerId: string) {
   const period = `${now.getFullYear()}-${(now.getMonth() + 1)
     .toString()
     .padStart(2, "0")}`;
-
-  // ✅ Proration logic is removed. We now use the full monthly charge.
   const fullAmount = customer.plan.monthly_charge;
 
-  const newInvoice = await prisma.invoice.create({
-    data: {
-      customer_id: customer.id,
-      period: period,
-      due_date: new Date(now.setDate(now.getDate() + 10)),
-      amount: fullAmount,
-      status: InvoiceStatus.DUE,
-      category: "First Bill", // Add a category for clarity
-    },
+  // ✅ FIX: Use a transaction to create both records in the correct order.
+  await prisma.$transaction(async (tx) => {
+    // STEP 1: Create the "BILLED" BillingCycle record first to get its ID.
+    const newBillingCycle = await tx.billingCycle.create({
+      data: {
+        customer_id: customer.id,
+        period: period,
+        status: "BILLED",
+      },
+    });
+
+    // STEP 2: Create the invoice and link it to the new billing cycle.
+    await tx.invoice.create({
+      data: {
+        customer_id: customer.id,
+        period: period,
+        due_date: new Date(now.setDate(now.getDate() + 10)),
+        amount: fullAmount,
+        status: InvoiceStatus.DUE,
+        category: "First Bill",
+        billingCycle_id: newBillingCycle.id, // ✅ Correctly link the invoice to the cycle
+      },
+    });
   });
 
-  // Create the billing cycle record immediately as "BILLED"
-  await prisma.billingCycle.create({
-    data: {
-      customer_id: customer.id,
-      period: period,
-      status: "BILLED",
-      invoice_id: newInvoice.id,
-    },
-  });
   console.log(
     `Immediately billed new customer ${
       customer.username
