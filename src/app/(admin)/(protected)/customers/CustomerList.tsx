@@ -88,7 +88,7 @@ export function CustomerList({ customers, totalCustomers, totalPages, plans, reg
             </div>
             <Select onValueChange={(value) => handleFilterChange('region', value)} defaultValue={searchParams.get('region') || 'all'}>
               <SelectTrigger><SelectValue placeholder="Filter by region..." /></SelectTrigger>
-              {/* ✅ FIX APPLIED HERE: Using explicit colors and z-index */}
+             
               <SelectContent className="bg-white dark:bg-slate-950 border shadow-lg z-50">
                 <SelectItem value="all">All Regions</SelectItem>
                 {regions.map(region => <SelectItem key={region.id} value={region.id}>{region.name}</SelectItem>)}

@@ -39,7 +39,7 @@ export default function CollectorLayout({
             <Link
               href="/collector/dashboard"
               className="flex items-center gap-2">
-              <Image src={hsLogo} alt="Logo" width={60} height={50} />
+              <Image src={hsLogo} alt="Logo" width={70} height={50} />
               <span className="font-bold text-lg hidden sm:inline">
                 HS-Network
               </span>

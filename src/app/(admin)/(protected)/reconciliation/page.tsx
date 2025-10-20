@@ -49,7 +49,7 @@ export default async function ReconciliationPage() {
   return (
     <div className="flex flex-col gap-4">
       <header>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+        <h1 className="text-xl sm:text-3xl font-bold tracking-tight">
           Reconciliation
         </h1>
         <p className="text-muted-foreground">
@@ -59,9 +59,7 @@ export default async function ReconciliationPage() {
       <Card>
         <CardHeader>
           <CardTitle>Cash Sessions</CardTitle>
-          <CardDescription>
-            Review and approve submitted cash collections.
-          </CardDescription>
+      
         </CardHeader>
         <CardContent>
           {/* DESKTOP VIEW */}
@@ -108,7 +106,7 @@ export default async function ReconciliationPage() {
                         <SessionDetailsDialog sessionId={session.id} />
                         {session.status === "CLOSED" && (
                           <ApproveSessionDialog session={session}>
-                            <Button size="sm">Approve</Button>
+                            <Button className="bg-green-600 text-white" size="sm">Approve</Button>
                           </ApproveSessionDialog>
                         )}
                       </div>
@@ -164,7 +162,7 @@ export default async function ReconciliationPage() {
                   <SessionDetailsDialog sessionId={session.id} />
                   {session.status === "CLOSED" && (
                     <ApproveSessionDialog session={session}>
-                      <Button size="sm" className="flex-grow">
+                      <Button size="sm" className="flex-grow bg-green-600 text-white">
                         Approve
                       </Button>
                     </ApproveSessionDialog>

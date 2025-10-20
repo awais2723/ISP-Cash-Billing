@@ -15,7 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { AddCustomInvoiceForm } from "./AddCustomInvoiceForm"; // Import the form
+import { AddCustomInvoiceForm } from "./AddCustomInvoiceForm";
+import { cn } from "@/lib/utils"; // Import cn for conditional classes
+import { useCallback } from "react";
 
 // Define types for state
 interface Customer {
@@ -25,7 +27,7 @@ interface Customer {
 }
 interface Invoice {
   id: string;
-  period: string;
+  period: string | null;
   category: string | null;
   notes: string | null;
   amount: number;
@@ -63,6 +65,23 @@ export default function CustomerDetailPage() {
     };
     fetchData();
   }, [id]);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/customers/${id}`);
+      if (response.ok) setData(await response.json());
+      else toast.error("Failed to load customer details.");
+    } catch (error) {
+      toast.error("An error occurred while fetching data.");
+    }
+    setIsLoading(false);
+  }, [id]); // Dependency array includes id
+
+  useEffect(() => {
+    if (!id) return;
+    fetchData();
+  }, [id, fetchData]); // Include fetchData in dependency array
 
   const handleInvoiceSelect = (invoiceId: string) => {
     setSelectedInvoices((prev) =>
@@ -121,29 +140,43 @@ export default function CustomerDetailPage() {
   };
 
   if (isLoading)
-    return <div className="text-center p-8">Loading Customer Details...</div>;
+    return (
+      <div className="text-center p-8 text-muted-foreground">
+        Loading Customer Details...
+      </div>
+    );
   if (!data) return <div className="text-center p-8">Customer not found.</div>;
 
   const { customer, invoices } = data;
 
   return (
-    <div className="space-y-4">
+    // ✅ Main container with slightly reduced vertical gap on small screens
+    <div className="space-y-4 md:space-y-6">
       <Card>
         <CardHeader>
-          {/* ✅ Button is now in the top right corner */}
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start gap-2">
             <div>
-              <CardTitle className="text-xl">{customer.Fname}</CardTitle>
-              <CardDescription>{customer.address}</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">
+                {customer.Fname}
+              </CardTitle>
+
+              <CardDescription className="text-sm sm:text-base">
+                {customer.address}
+              </CardDescription>
             </div>
-            <AddCustomInvoiceForm customerId={id} />
+            <div className="flex-shrink-0">
+              <AddCustomInvoiceForm
+                customerId={id}
+                onInvoiceAdded={fetchData}
+              />
+            </div>
           </div>
         </CardHeader>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Due Invoices</CardTitle>
+          <CardTitle className="text-base sm:text-lg">Due Invoices</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -151,16 +184,23 @@ export default function CustomerDetailPage() {
               invoices.map((inv) => {
                 const totalDue =
                   inv.amount + inv.extra_amount - inv.paid_amount;
+                const isSelected = selectedInvoices.includes(inv.id);
                 return (
                   <div
                     key={inv.id}
-                    className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50">
-                    {/* ✅ Checkbox added for multi-select */}
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors",
+                      isSelected
+                        ? "bg-blue-50 border-blue-200"
+                        : "hover:bg-gray-50"
+                    )}
+                    onClick={() => handleInvoiceSelect(inv.id)} // Allow clicking anywhere on the row
+                  >
                     <div className="flex items-center space-x-3">
                       <Checkbox
                         id={inv.id}
-                        onCheckedChange={() => handleInvoiceSelect(inv.id)}
-                        checked={selectedInvoices.includes(inv.id)}
+                        checked={isSelected}
+                        onCheckedChange={() => handleInvoiceSelect(inv.id)} // Keep checkbox functional too
                       />
                       <Label
                         htmlFor={inv.id}
@@ -173,7 +213,7 @@ export default function CustomerDetailPage() {
                         )}
                       </Label>
                     </div>
-                    <span className="font-bold text-red-600">
+                    <span className="font-bold text-red-600 text-sm sm:text-base whitespace-nowrap">
                       PKR {totalDue.toFixed(2)}
                     </span>
                   </div>
@@ -188,11 +228,12 @@ export default function CustomerDetailPage() {
         </CardContent>
       </Card>
 
-      {/* The payment form now only appears if an invoice is selected */}
       {selectedInvoices.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Record Payment</CardTitle>
+            <CardTitle className="text-base sm:text-lg">
+              Record Payment
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCollectPayment} className="space-y-4">
@@ -201,14 +242,19 @@ export default function CustomerDetailPage() {
                 <Input
                   id="payment_amount"
                   type="number"
+                  inputMode="decimal" // Better mobile keyboard
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   required
+                  className="h-12 text-lg" // Larger input for easier tapping
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Processing..." : "Record Cash Payment"}
+              <Button
+                type="submit"
+                className="bg-green-600 text-white w-full h-12 text-base"
+                disabled={isSubmitting}>
+                {isSubmitting ? "Processing..." : "Record Payment"}
               </Button>
             </form>
           </CardContent>

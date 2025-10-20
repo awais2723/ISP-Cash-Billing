@@ -59,7 +59,9 @@ export default async function RegionsPage() {
             </CardDescription>
           </div>
           <RegionForm allRegions={regions}>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">Add New Region</Button>
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+              Add New Region
+            </Button>
           </RegionForm>
         </CardHeader>
         <CardContent>
@@ -91,13 +93,11 @@ export default async function RegionsPage() {
                         </RegionForm>
                         <DeleteRegionDialog
                           regionId={region.id}
-                          regionName={region.name}
-                        >
+                          regionName={region.name}>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-red-600 hover:text-red-700"
-                          >
+                            className="text-red-600 hover:text-red-700">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </DeleteRegionDialog>
@@ -134,7 +134,7 @@ export default async function RegionsPage() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <div className="flex w-full gap-2">
+                  <div className="flex flex-col sm:flex-row w-full gap-2">
                     <RegionForm region={region} allRegions={regions}>
                       <Button variant="outline" className="w-full">
                         Edit
@@ -142,12 +142,10 @@ export default async function RegionsPage() {
                     </RegionForm>
                     <DeleteRegionDialog
                       regionId={region.id}
-                      regionName={region.name}
-                    >
+                      regionName={region.name}>
                       <Button
                         variant="outline"
-                        className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-400"
-                      >
+                        className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-400">
                         Delete
                       </Button>
                     </DeleteRegionDialog>

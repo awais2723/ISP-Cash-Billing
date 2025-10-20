@@ -67,10 +67,10 @@ export default function CollectorDashboard() {
             <CardTitle className="text-sm font-medium">
               Collected Today
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl font-bold">
               PKR {totalCollectedToday.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -110,8 +110,8 @@ export default function CollectorDashboard() {
             <Button
               onClick={() => setIsCloseConfirmOpen(true)}
               variant="outline"
-              className="w-full">
-              <PowerOff className="mr-2 h-4 w-4" /> Close Session
+              className=" bg-red-700 text-white w-full">
+              <PowerOff className=" mr-2 h-4 w-4" /> Close Session
             </Button>
           ) : (
             <Button

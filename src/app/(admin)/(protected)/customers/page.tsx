@@ -1,7 +1,7 @@
 import prisma from '@/lib/prisma';
 import { CustomerList } from './CustomerList';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 15;
 
 export default async function CustomersPage({
   searchParams,

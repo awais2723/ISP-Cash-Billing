@@ -49,41 +49,55 @@ export function CustomerListPage({ customers, regions }: CustomerListPageProps) 
     <div className="space-y-4">
       {/* ✅ REMOVED: Redundant back button is now gone */}
       <header>
-          <h1 className="text-2xl font-bold tracking-tight">Collection List</h1>
-          <p className="text-muted-foreground">Search and select a customer to collect payment.</p>
+        <h1 className="text-2xl font-bold tracking-tight">Collection List</h1>
+        <p className="text-muted-foreground">
+          Search and select a customer to collect payment.
+        </p>
       </header>
 
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input 
-              placeholder="Search by name or username..." 
+            <Input
+              placeholder="Search by name or username..."
               className="pl-10"
               onChange={(e) => handleSearch(e.target.value)}
-              defaultValue={searchParams.get('search')?.toString()}
+              defaultValue={searchParams.get("search")?.toString()}
             />
           </div>
-          <Select onValueChange={(value) => handleFilterChange('region', value)} defaultValue={searchParams.get('region') || 'all'}>
-            <SelectTrigger><SelectValue placeholder="Filter by region..." /></SelectTrigger>
+          <Select
+            onValueChange={(value) => handleFilterChange("region", value)}
+            defaultValue={searchParams.get("region") || "all"}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by region..." />
+            </SelectTrigger>
             <SelectContent className="bg-white z-50">
               <SelectItem value="all">All Assigned Regions</SelectItem>
-              {regions.map(region => <SelectItem key={region.id} value={region.name}>{region.name}</SelectItem>)}
+              {regions.map((region) => (
+                <SelectItem key={region.id} value={region.name}>
+                  {region.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </CardContent>
       </Card>
-      
+
       <div className="space-y-3">
-        {customers.map(customer => (
-          <Card key={customer.id} className={customer.dues > 0 ? "border-red-500 border-2" : ""}>
+        {customers.map((customer) => (
+          <Card
+            key={customer.id}
+            className={customer.dues > 0 ? "border-red-500 border-2" : ""}>
             <CardHeader>
               <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{customer.Fname}</CardTitle>
-                  <div className="text-right">
-                      <p className="font-bold text-lg text-red-600">PKR {customer.dues.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Total Due</p>
-                  </div>
+                <CardTitle className="text-lg">{customer.Fname}</CardTitle>
+                <div className="text-right">
+                  <p className="font-bold text-lg text-red-600">
+                    PKR {customer.dues.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Total Due</p>
+                </div>
               </div>
               <CardDescription>@{customer.username}</CardDescription>
             </CardHeader>
@@ -92,14 +106,16 @@ export function CustomerListPage({ customers, regions }: CustomerListPageProps) 
                 <Phone className="h-4 w-4 mr-2" /> {customer.phone}
               </div>
               <div className="flex items-start text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4 mr-2 mt-0.5 shrink-0" /> 
+                <MapPin className="h-4 w-4 mr-2 mt-0.5 shrink-0" />
                 <span>{customer.address}</span>
               </div>
             </CardContent>
             <CardFooter>
-              <Link href={`/collector/customers/${customer.id}`} className="w-full">
-                <Button className="w-full">
-                  <FileText className="mr-2 h-4 w-4" /> Collect Payment / View Invoices
+              <Link
+                href={`/collector/customers/${customer.id}`}
+                className="w-full">
+                <Button className="bg-blue-500 text-white w-full">
+                  <FileText className=" mr-2 h-4 w-4" /> Collect Payment
                 </Button>
               </Link>
             </CardFooter>

@@ -68,7 +68,7 @@ export default function LoginPage({ searchParams }: { searchParams: { error: str
               </div>
               <Button 
                 type="submit" 
-                className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700"
+                className="w-full h-12 text-lg text-white font-bold bg-blue-600 hover:bg-blue-700"
               >
                 Sign In
               </Button>

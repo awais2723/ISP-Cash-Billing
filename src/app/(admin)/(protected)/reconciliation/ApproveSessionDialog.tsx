@@ -68,7 +68,7 @@ export function ApproveSessionDialog({
                 required
               />
             </div>
-            <Button type="submit" className="w-full mt-4">
+            <Button type="submit" className="bg-green-600 text-white w-full mt-4">
               Confirm & Approve
             </Button>
           </form>

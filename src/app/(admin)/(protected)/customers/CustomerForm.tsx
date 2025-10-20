@@ -176,6 +176,7 @@ export function CustomerForm({
               <div>
                 {customer && (
                   <Button
+                    className="bg-red-500 hover:bg-red-600 text-white"
                     type="button"
                     variant="destructive"
                     onClick={() => setIsDeleteDialogOpen(true)}>
@@ -183,7 +184,9 @@ export function CustomerForm({
                   </Button>
                 )}
               </div>
-              <Button type="submit">
+              <Button
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+                type="submit">
                 {customer ? "Update Customer" : "Create Customer"}
               </Button>
             </DialogFooter>
