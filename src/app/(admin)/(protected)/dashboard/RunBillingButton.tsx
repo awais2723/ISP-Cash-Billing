@@ -25,8 +25,11 @@ export function RunBillingButton() {
   };
 
   return (
-    <Button onClick={handleRunBilling} disabled={isPending}>
-      <Zap className="mr-2 h-4 w-4" />
+    <Button
+      className="bg-blue-600 hover:bg-blue-700 text-white"
+      onClick={handleRunBilling}
+      disabled={isPending}>
+      <Zap className=" mr-2 h-4 w-4" />
       {isPending ? "Running..." : "Run Monthly Billing"}
     </Button>
   );

@@ -119,7 +119,7 @@ model Invoice {
   billingCycle    BillingCycle? @relation(fields: [billingCycle_id], references: [id])
 
   @@index([customer_id, status])
-  @@unique([customer_id, period, category])
+
  
 
 

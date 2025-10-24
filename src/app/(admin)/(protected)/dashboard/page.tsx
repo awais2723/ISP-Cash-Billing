@@ -30,12 +30,11 @@ async function ManagerDashboard() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Manager Dashboard</h1>
-        <p className="text-muted-foreground">An overview of customer and regional data.</p>
       </header>
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2">
-        <StatCard title="Total Active Customers" value={activeCustomers} icon={Users} description="Currently subscribed" />
+        {/* <StatCard title="Total Active Customers" value={activeCustomers} icon={Users} description="Currently subscribed" /> */}
         <StatCard title="New Customers" value={`+${newCustomers}`} icon={UserPlus} description="Joined this month" />
       </div>
 

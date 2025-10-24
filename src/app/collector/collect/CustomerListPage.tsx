@@ -47,7 +47,7 @@ export function CustomerListPage({ customers, regions }: CustomerListPageProps) 
 
   return (
     <div className="space-y-4">
-      {/* ✅ REMOVED: Redundant back button is now gone */}
+    
       <header>
         <h1 className="text-2xl font-bold tracking-tight">Collection List</h1>
         <p className="text-muted-foreground">

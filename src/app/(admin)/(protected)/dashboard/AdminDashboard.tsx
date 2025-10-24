@@ -5,7 +5,8 @@ import { RecentCollectionsChart } from './RecentCollectionsChart';
 import { AgingPieChart } from './AgingPieChart';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import Link from 'next/link';
+import { CustomersPerRegionChart } from "./CustomersPerRegionChart";
+
 import { RunBillingButton } from './RunBillingButton';
 
 export const dynamic = "force-dynamic";
@@ -32,27 +33,88 @@ export default async function DashboardPage() {
     agingDataOver90,
     totalDuesData,
     activeSessionsCount,
+    regionsWithCustomerCounts,
   ] = await Promise.all([
-    prisma.payment.aggregate({ _sum: { amount: true }, where: { received_at: { gte: startOfMonth } } }),
-    prisma.payment.aggregate({ _sum: { amount: true }, where: { received_at: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
-    prisma.invoice.aggregate({ _sum: { amount: true }, where: { period: currentPeriod } }),
-    prisma.cashSession.count({ where: { status: 'CLOSED' } }),
-    prisma.customer.count({ where: { status: 'ACTIVE' } }),
-    prisma.customer.count({ where: { createdAt: { gte: startOfMonth } } }),
-    prisma.payment.groupBy({
-      by: ['collector_id'],
+    prisma.payment.aggregate({
       _sum: { amount: true },
       where: { received_at: { gte: startOfMonth } },
-      orderBy: { _sum: { amount: 'desc' } },
+    }),
+    prisma.payment.aggregate({
+      _sum: { amount: true },
+      where: { received_at: { gte: startOfLastMonth, lte: endOfLastMonth } },
+    }),
+    prisma.invoice.aggregate({
+      _sum: { amount: true },
+      where: { period: currentPeriod },
+    }),
+    prisma.cashSession.count({ where: { status: "CLOSED" } }),
+    prisma.customer.count({ where: { status: "ACTIVE" } }),
+    prisma.customer.count({ where: { createdAt: { gte: startOfMonth } } }),
+    prisma.payment.groupBy({
+      by: ["collector_id"],
+      _sum: { amount: true },
+      where: { received_at: { gte: startOfMonth } },
+      orderBy: { _sum: { amount: "desc" } },
       take: 3,
     }),
-    prisma.invoice.aggregate({_sum: {amount: true}, where: {status: {in:['DUE','PARTIAL']}, due_date: { gte: new Date(new Date().setDate(new Date().getDate() - 30))}}}),
-    prisma.invoice.aggregate({_sum: {amount: true}, where: {status: {in:['DUE','PARTIAL']}, due_date: { lt: new Date(new Date().setDate(new Date().getDate() - 30)), gte: new Date(new Date().setDate(new Date().getDate() - 60))}}}),
-    prisma.invoice.aggregate({_sum: {amount: true}, where: {status: {in:['DUE','PARTIAL']}, due_date: { lt: new Date(new Date().setDate(new Date().getDate() - 60)), gte: new Date(new Date().setDate(new Date().getDate() - 90))}}}),
-    prisma.invoice.aggregate({_sum: {amount: true}, where: {status: {in:['DUE','PARTIAL']}, due_date: { lt: new Date(new Date().setDate(new Date().getDate() - 90))}}}),
-    prisma.invoice.aggregate({ _sum: { amount: true }, where: { status: { in: ['DUE', 'PARTIAL'] } } }),
-    prisma.cashSession.count({ where: { status: 'OPEN' } }),
+    prisma.invoice.aggregate({
+      _sum: { amount: true },
+      where: {
+        status: { in: ["DUE", "PARTIAL"] },
+        due_date: {
+          gte: new Date(new Date().setDate(new Date().getDate() - 30)),
+        },
+      },
+    }),
+    prisma.invoice.aggregate({
+      _sum: { amount: true },
+      where: {
+        status: { in: ["DUE", "PARTIAL"] },
+        due_date: {
+          lt: new Date(new Date().setDate(new Date().getDate() - 30)),
+          gte: new Date(new Date().setDate(new Date().getDate() - 60)),
+        },
+      },
+    }),
+    prisma.invoice.aggregate({
+      _sum: { amount: true },
+      where: {
+        status: { in: ["DUE", "PARTIAL"] },
+        due_date: {
+          lt: new Date(new Date().setDate(new Date().getDate() - 60)),
+          gte: new Date(new Date().setDate(new Date().getDate() - 90)),
+        },
+      },
+    }),
+    prisma.invoice.aggregate({
+      _sum: { amount: true },
+      where: {
+        status: { in: ["DUE", "PARTIAL"] },
+        due_date: {
+          lt: new Date(new Date().setDate(new Date().getDate() - 90)),
+        },
+      },
+    }),
+    prisma.invoice.aggregate({
+      _sum: { amount: true },
+      where: { status: { in: ["DUE", "PARTIAL"] } },
+    }),
+    prisma.cashSession.count({ where: { status: "OPEN" } }),
+
+    prisma.region.findMany({
+      include: {
+        _count: {
+          select: { customers: { where: { status: "ACTIVE" } } }, // Only count active customers
+        },
+      },
+      orderBy: {
+        // Optional: Order regions for consistent chart display
+        name: "asc",
+      },
+    }),
   ]);
+
+
 
   const collectorIds = topCollectorsData.map(c => c.collector_id);
   const collectors = await prisma.user.findMany({ where: { id: { in: collectorIds }}, select: { id: true, Fname: true } });
@@ -79,6 +141,13 @@ export default async function DashboardPage() {
       { name: '61-90 Days', value: agingData90._sum.amount || 0 },
       { name: '90+ Days', value: agingDataOver90._sum.amount || 0 },
   ].filter(d => d.value > 0);
+
+  const regionChartData = regionsWithCustomerCounts
+    .map((region) => ({
+      name: region.name,
+      total: region._count.customers,
+    }))
+    .filter((region) => region.total > 0);
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -150,8 +219,10 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2">
           <RecentCollectionsChart data={collectionsByDay} />
         </div>
+
+       
         <div className="lg:col-span-1">
-          <AgingPieChart data={agingPieChartData} />
+          <CustomersPerRegionChart data={regionChartData} />
         </div>
       </div>
       <Card>

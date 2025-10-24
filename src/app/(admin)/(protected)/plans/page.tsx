@@ -95,14 +95,7 @@ export default async function PlansPage() {
                             <Edit className="h-4 w-4" />
                           </Button>
                         </PlanForm>
-                        <DeletePlanDialog planId={plan.id} planName={plan.name}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-600 hover:text-red-700">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </DeletePlanDialog>
+                       
                       </div>
                     </TableCell>
                   </TableRow>
@@ -143,13 +136,7 @@ export default async function PlansPage() {
                         Edit
                       </Button>
                     </PlanForm>
-                    <DeletePlanDialog planId={plan.id} planName={plan.name}>
-                      <Button
-                        variant="outline"
-                        className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-400">
-                        Delete
-                      </Button>
-                    </DeletePlanDialog>
+              
                   </div>
                 </CardFooter>
               </Card>
